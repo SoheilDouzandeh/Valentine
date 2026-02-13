@@ -32,14 +32,29 @@ body{
 }
 
 .hearts{position:fixed;inset:0;pointer-events:none;z-index:0}
-.heart{position:absolute;bottom:-60px;font-size:18px;animation:floatUp linear forwards;opacity:.9}
+.heart{
+  position:absolute;
+  bottom:-60px;
+  font-size:18px;
+  animation:floatUp linear forwards;
+  opacity:.9;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+}
 @keyframes floatUp{
   0%{opacity:0;transform:translateY(0)}
   10%{opacity:1}
   100%{opacity:0;transform:translateY(-120vh)}
 }
 
-.wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;z-index:2}
+.wrap{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  position:relative;
+  z-index:2;
+}
 .card{
   width:min(560px,92vw);
   background:var(--card);
@@ -47,17 +62,11 @@ body{
   border-radius:22px;
   padding:18px;
   text-align:center;
-  position:relative;
   backdrop-filter: blur(10px);
   box-shadow: 0 25px 60px rgba(0,0,0,.35);
 }
 
-.title{
-  font-weight:1000;
-  font-size:clamp(28px,7vw,44px);
-  line-height:1.15;
-  margin:0;
-}
+.title{font-weight:1000;font-size:clamp(28px,7vw,44px);margin:0;line-height:1.15}
 .sub{margin:10px 0 0;font-weight:700;opacity:.9}
 
 .photoWrap{
@@ -76,7 +85,7 @@ body{
 .btnRow{
   margin-top:16px;
   position:relative;
-  height:90px;
+  height:104px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -91,13 +100,11 @@ button{
   cursor:pointer;
   min-width:130px;
 }
-
 #yesBtn{
   background:linear-gradient(180deg,#2be39a,var(--yes));
   color:#052013;
   box-shadow: 0 18px 30px rgba(25,195,125,.25);
 }
-
 #noBtn{
   background:linear-gradient(180deg,#ff6b86,var(--no));
   color:#2b0010;
@@ -109,34 +116,82 @@ button{
   box-shadow: 0 18px 30px rgba(255,77,109,.22);
 }
 
-/* Celebration overlay */
+/* Smaller NO on mobile */
+@media (max-width:480px){
+  #noBtn{ font-size:14px; padding:8px 12px; min-width:80px; border-radius:14px; }
+  .btnRow{ height: 112px; }
+}
+
+/* Celebration overlay with smooth fade */
 .celebrate{
   position:fixed;
   inset:0;
-  display:none;
-  background:rgba(0,0,0,.78);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
   z-index:5;
+
+  /* start hidden but mounted */
+  opacity:0;
+  pointer-events:none;
+  background:rgba(0,0,0,.82);
+  transition: opacity 420ms ease;
 }
-.celebrate.on{display:block}
+.celebrate.on{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.celebrateCard{
+  width:min(560px,92vw);
+  background: rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:22px;
+  padding:18px 16px 16px;
+  text-align:center;
+  box-shadow: 0 30px 70px rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+
+  transform: translateY(10px) scale(.98);
+  transition: transform 420ms ease;
+}
+.celebrate.on .celebrateCard{
+  transform: translateY(0) scale(1);
+}
+
 .bigMsg{
-  font-size:clamp(26px,7vw,48px);
+  font-size:clamp(26px,7vw,46px);
   font-weight:1000;
-  text-align:center;
-  margin-top:30vh;
-  direction:rtl;
+  margin:0;
 }
-.smallHint{
-  margin-top:10px;
-  text-align:center;
-  opacity:.85;
-  font-weight:700;
+
+.videoWrap{
+  margin-top:14px;
+  display:flex;
+  justify-content:center;
+}
+.videoWrap video{
+  width:min(320px,84vw);
+  border-radius:18px;
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 22px 50px rgba(0,0,0,.45);
+
+  /* fade the video itself */
+  opacity:0;
+  transform: scale(.98);
+  transition: opacity 520ms ease, transform 520ms ease;
+}
+.celebrate.on .videoWrap video{
+  opacity:1;
+  transform: scale(1);
 }
 </style>
 </head>
 
 <body>
 
-<!-- AUDIO: upload your mp3 to repo as valentine.mp3 -->
+<!-- AUDIO (repo root): valentine.mp3 -->
 <audio id="bgMusic" preload="auto">
   <source src="valentine.mp3" type="audio/mpeg">
 </audio>
@@ -159,9 +214,16 @@ button{
   </div>
 </div>
 
-<div class="celebrate" id="celebrate">
-  <div class="bigMsg">می‌دونستم دوستم داری 💖</div>
-  <div class="smallHint">🎶 آهنگ روشن شد</div>
+<!-- Fade-in overlay is always in DOM, just hidden until YES -->
+<div class="celebrate" id="celebrate" aria-hidden="true">
+  <div class="celebrateCard">
+    <p class="bigMsg">می‌دونستم دوستم داری 💖</p>
+
+    <div class="videoWrap">
+      <!-- Put your video in repo root as baby.mp4 -->
+      <video id="babyVid" src="baby.mp4" loop playsinline preload="auto"></video>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -172,28 +234,42 @@ function spawnHeart(){
   h.className="heart";
   h.textContent="🤍";
   h.style.left=Math.random()*100+"vw";
-  h.style.animationDuration=6+Math.random()*4+"s";
+  h.style.fontSize=(14+Math.random()*22)+"px";
+  h.style.animationDuration=(5.5+Math.random()*4.5)+"s";
   heartsEl.appendChild(h);
-  setTimeout(()=>h.remove(),10000);
+  setTimeout(()=>h.remove(),11000);
 }
-setInterval(spawnHeart,250);
+setInterval(spawnHeart,220);
 
-// NO button fix (always moves)
+// Fast NO dodge (mobile tuned)
 const noBtn=document.getElementById("noBtn");
 const btnArea=document.getElementById("btnArea");
 
 function moveNoButton(pointerX,pointerY){
   const area=btnArea.getBoundingClientRect();
   const btn=noBtn.getBoundingClientRect();
-
   const padding=6;
-  const maxX=area.width-btn.width-padding;
-  const maxY=area.height-btn.height-padding;
 
-  let x=Math.random()*maxX+padding;
-  let y=Math.random()*maxY+padding;
+  const maxX=Math.max(0, area.width - btn.width - padding);
+  const maxY=Math.max(0, area.height - btn.height - padding);
 
-  // ensure no conflicts
+  let x=Math.random()*maxX + padding;
+  let y=Math.random()*maxY + padding;
+
+  if (Number.isFinite(pointerX) && Number.isFinite(pointerY)) {
+    const px = pointerX - area.left;
+    const py = pointerY - area.top;
+
+    if (px < area.width/2) x = (area.width/2) + Math.random()*(area.width/2 - btn.width - padding);
+    else x = Math.random()*(area.width/2 - padding);
+
+    if (py < area.height/2) y = (area.height/2) + Math.random()*(area.height/2 - btn.height - padding);
+    else y = Math.random()*(area.height/2 - padding);
+
+    x = Math.min(Math.max(padding, x), maxX);
+    y = Math.min(Math.max(padding, y), maxY);
+  }
+
   noBtn.style.right="auto";
   noBtn.style.bottom="auto";
   noBtn.style.left=x+"px";
@@ -213,38 +289,81 @@ btnArea.addEventListener("pointermove",e=>{
   const b=noBtn.getBoundingClientRect();
   const dx=e.clientX-(b.left+b.width/2);
   const dy=e.clientY-(b.top+b.height/2);
-  if(Math.hypot(dx,dy)<120) moveNoButton(e.clientX,e.clientY);
+  if(Math.hypot(dx,dy) < 160) moveNoButton(e.clientX,e.clientY);
 });
 
-// Mobile finger drag dodge
-btnArea.addEventListener("touchmove",e=>{
-  const t=e.touches[0];
-  if(!t) return;
+// Mobile touch dodge (fast)
+let lastDodge = 0;
+function mobileDodge(t){
+  const now = Date.now();
+  if (now - lastDodge < 70) return;
+  lastDodge = now;
+
   const b=noBtn.getBoundingClientRect();
   const dx=t.clientX-(b.left+b.width/2);
   const dy=t.clientY-(b.top+b.height/2);
-  if(Math.hypot(dx,dy)<160) moveNoButton(t.clientX,t.clientY);
+  if(Math.hypot(dx,dy) < 220) moveNoButton(t.clientX,t.clientY);
+}
+btnArea.addEventListener("touchstart",e=>{
+  const t=e.touches[0]; if(!t) return; mobileDodge(t);
+},{passive:true});
+btnArea.addEventListener("touchmove",e=>{
+  const t=e.touches[0]; if(!t) return; mobileDodge(t);
 },{passive:true});
 
-// Make it move at load
+// Ensure NO moves on load
 window.addEventListener("load",()=>{
   moveNoButton();
   setTimeout(()=>moveNoButton(),200);
 });
 
-// YES: show overlay + play music (allowed because user clicked)
+// Sync video + music on YES with smooth fade-in
+const yesBtn = document.getElementById("yesBtn");
+const celebrate = document.getElementById("celebrate");
 const music = document.getElementById("bgMusic");
-document.getElementById("yesBtn").addEventListener("click", async ()=>{
-  document.getElementById("celebrate").classList.add("on");
+const babyVid = document.getElementById("babyVid");
 
+async function fadeInAudio(target=1.0, ms=650){
+  const steps = 20;
+  const stepTime = ms/steps;
+  for (let i=0;i<=steps;i++){
+    music.volume = target * (i/steps);
+    await new Promise(r=>setTimeout(r, stepTime));
+  }
+}
+
+yesBtn.addEventListener("click", async () => {
+  // show overlay (fade)
+  celebrate.classList.add("on");
+  celebrate.setAttribute("aria-hidden","false");
+
+  // sync start as tightly as possible:
+  // 1) reset both to 0
+  // 2) start both immediately from same click
   try{
-    music.volume = 0.9;     // adjust as you like
-    music.loop = true;      // keep playing
-    await music.play();
+    music.pause();
+    babyVid.pause();
+    music.currentTime = 0;
+    babyVid.currentTime = 0;
+
+    music.loop = true;
+    babyVid.loop = true;
+    babyVid.muted = true; // keeps it simple; your song is the audio
+
+    // start both immediately
+    music.volume = 0.05;
+    const p1 = music.play();
+    const p2 = babyVid.play();
+
+    // wait for both (if one fails it will throw)
+    await Promise.all([p1, p2]);
+
+    // smooth audio fade-in (video fades via CSS)
+    await fadeInAudio(1.0, 650);
+
   }catch(err){
-    // If browser blocks for some reason, show a tiny hint
-    console.log("Audio play blocked:", err);
-    alert("برای پخش آهنگ، یک بار روی صفحه بزن 🙂");
+    console.log("Playback blocked:", err);
+    alert("اگه آهنگ یا ویدیو پخش نشد، یک بار روی صفحه بزن 🙂");
   }
 });
 </script>
