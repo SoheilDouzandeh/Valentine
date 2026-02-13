@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Valentine</title>
+
+  <!-- Persian-friendly font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900;1000&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#0b0b10;
+      --bg2:#141425;
+      --text:#ffffff;
+      --muted:rgba(255,255,255,.85);
+      --yes:#19c37d;
+      --no:#ff4d6d;
+      --card:rgba(255,255,255,.07);
+      --stroke:rgba(255,255,255,.18);
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: "Vazirmatn", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 50% -10%, #2a2a5a 0%, transparent 60%),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+      touch-action: manipulation;
+    }
+
+    /* Floating hearts layer */
+    .hearts{
+      position:fixed;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index:0;
+    }
+    .heart{
+      position:absolute;
+      bottom:-60px;
+      font-size:18px;
+      opacity:.9;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+      animation: floatUp linear forwards;
+      will-change: transform, opacity;
+    }
+    @keyframes floatUp{
+      0%{ transform: translate3d(0,0,0) scale(1); opacity:0; }
+      8%{ opacity:.95; }
+      100%{ transform: translate3d(0,-120vh,0) scale(1.25); opacity:0; }
+    }
+
+    /* Main layout */
+    .wrap{
+      position:relative;
+      z-index:2;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px 16px env(safe-area-inset-bottom) 16px;
+    }
+    .card{
+      width:min(560px, 92vw);
+      background: var(--card);
+      border:1px solid var(--stroke);
+      border-radius:22px;
+      padding:18px 14px 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 25px 60px rgba(0,0,0,.35);
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .title{
+      font-weight:1000;
+      letter-spacing:.2px;
+      line-height:1.1;
+      margin:0;
+      font-size: clamp(26px, 6.6vw, 44px);
+      text-shadow: 0 10px 25px rgba(0,0,0,.45);
+    }
+    .sub{
+      margin:10px 0 0;
+      color:var(--muted);
+      font-weight:700;
+      font-size: clamp(13px, 3.6vw, 16px);
+    }
+
+    /* Whiteboard image */
+    .photoWrap{
+      margin-top:14px;
+      border-radius:18px;
+      border: 1px solid rgba(255,255,255,.18);
+      overflow:hidden;
+      background: rgba(0,0,0,.18);
+      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+    }
+    .photo{
+      width:100%;
+      display:block;
+      /* make text pop on the whiteboard */
+      filter: contrast(1.25) brightness(1.06) saturate(1.05) sharpen(1);
+      transform: translateZ(0);
+      cursor: zoom-in;
+    }
+    /* fallback "sharpen" (not real CSS filter but harmless) */
+    .photo{ image-rendering: auto; }
+
+    .tapHint{
+      margin:8px 0 0;
+      font-size:12px;
+      color: rgba(255,255,255,.72);
+      font-weight:700;
+    }
+
+    .btnRow{
+      margin-top:14px;
+      position:relative;
+      height:86px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      outline:none;
+      font-weight:1000;
+      font-size:18px;
+      padding:14px 22px;
+      border-radius:16px;
+      cursor:pointer;
+      transform: translateZ(0);
+      transition: transform .08s ease, filter .2s ease;
+      min-width: 130px;
+    }
+    button:active{ transform: scale(.98); }
+
+    #yesBtn{
+      background: linear-gradient(180deg, #2be39a, var(--yes));
+      color:#052013;
+      box-shadow: 0 18px 30px rgba(25,195,125,.25);
+    }
+
+    #noBtn{
+      background: linear-gradient(180deg, #ff6b86, var(--no));
+      color:#2b0010;
+      box-shadow: 0 18px 30px rgba(255,77,109,.22);
+      position:absolute;
+      right: 12px;
+      bottom: 10px;
+      user-select:none;
+      touch-action:none;
+    }
+
+    /* Lightbox for image zoom */
+    .lightbox{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.82);
+      display:none;
+      z-index:10;
+      padding: 18px 14px env(safe-area-inset-bottom) 14px;
+    }
+    .lightbox.on{ display:flex; align-items:center; justify-content:center; }
+    .lightbox img{
+      width:min(980px, 96vw);
+      max-height: 86vh;
+      object-fit: contain;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+      filter: contrast(1.28) brightness(1.06) saturate(1.05);
+    }
+    .lbHint{
+      position:fixed;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      text-align:center;
+      color: rgba(255,255,255,.8);
+      font-weight:800;
+      font-size: 12px;
+      z-index: 11;
+    }
+
+    /* Celebration overlay */
+    .celebrate{
+      position:fixed;
+      inset:0;
+      display:none;
+      z-index:6;
+      overflow:hidden;
+      background: radial-gradient(1200px 800px at 50% 10%, rgba(255,255,255,.10), transparent 60%),
+                  linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.70));
+    }
+    .celebrate.on{ display:block; }
+
+    .celebrateCenter{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px 16px env(safe-area-inset-bottom) 16px;
+      text-align:center;
+      z-index:2;
+    }
+
+    .bigYes{
+      width:min(560px, 92vw);
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius:24px;
+      padding:18px 16px 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 30px 70px rgba(0,0,0,.5);
+    }
+
+    .bigMsg{
+      margin:0;
+      font-weight:1000;
+      font-size: clamp(26px, 7.2vw, 48px);
+      line-height:1.05;
+      text-transform: uppercase;
+      text-shadow: 0 14px 30px rgba(0,0,0,.55);
+      direction:ltr; /* English message */
+      unicode-bidi: isolate;
+    }
+
+    .gifWrap{
+      margin-top:14px;
+      display:flex;
+      justify-content:center;
+    }
+    .gifWrap img{
+      width:min(300px, 82vw);
+      border-radius:18px;
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 22px 50px rgba(0,0,0,.45);
+    }
+
+    /* Graffiti layer */
+    .graffiti{
+      position:absolute;
+      inset:-40px;
+      pointer-events:none;
+      z-index:1;
+    }
+    .tag{
+      position:absolute;
+      font-weight:1000;
+      opacity:.97;
+      transform: rotate(var(--r));
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.55));
+      mix-blend-mode: screen;
+      letter-spacing:.8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      user-select:none;
+      text-shadow:
+        -2px -2px 0 rgba(0,0,0,.25),
+        2px -2px 0 rgba(0,0,0,.25),
+        -2px  2px 0 rgba(0,0,0,.25),
+        2px  2px 0 rgba(0,0,0,.25);
+      animation: pop .65s ease both;
+    }
+    @keyframes pop{
+      from{ transform: translateY(10px) rotate(var(--r)) scale(.9); opacity:0; }
+      to{ transform: translateY(0) rotate(var(--r)) scale(1); opacity:.98; }
+    }
+
+    /* Confetti canvas */
+    canvas#confetti{
+      position:fixed;
+      inset:0;
+      z-index:7;
+      pointer-events:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hearts" id="hearts" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="card" id="card">
+      <h1 class="title"><span style="direction:ltr; unicode-bidi:isolate;">فاطمه, WILL YOU BE MY VALENTINE?</span></h1>
+      <p class="sub">فقط یه گزینه درست وجود داره 😌</p>
+
+      <div class="photoWrap">
+        <!-- Put the enhanced image next to this index.html -->
+        <img id="boardImg" class="photo" src="whiteboard_enhanced.jpg" alt="Whiteboard note">
+      </div>
+      <p class="tapHint">روی عکس بزن تا بزرگ‌تر و واضح‌ تر ببینی 👆</p>
+
+      <div class="btnRow" id="btnArea">
+        <button id="yesBtn">YES</button>
+        <button id="noBtn" tabindex="-1" aria-disabled="true">NO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox for zoom -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lbHint">برای بستن، هرجا ضربه بزن</div>
+    <img id="lightboxImg" alt="Zoomed whiteboard" />
+  </div>
+
+  <!-- Celebration overlay -->
+  <canvas id="confetti"></canvas>
+  <div class="celebrate" id="celebrate">
+    <div class="graffiti" id="graffiti"></div>
+
+    <div class="celebrateCenter">
+      <div class="bigYes">
+        <p class="bigMsg">I KNEW YOU LOVE ME</p>
+
+        <div class="gifWrap">
+          <!-- Cute/funny vibe GIF (swap anytime) -->
+          <img
+            alt="Cute funny celebration"
+            src="https://media.giphy.com/media/ICOgUNjpvO0PC/giphy.gif"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Floating white hearts ----------
+    const heartsEl = document.getElementById("hearts");
+    const HEART = "🤍";
+
+    function spawnHeart() {
+      const h = document.createElement("div");
+      h.className = "heart";
+      h.textContent = HEART;
+
+      const left = Math.random() * 100;       // vw
+      const size = 14 + Math.random() * 24;   // px
+      const dur  = 6  + Math.random() * 6;    // sec
+      const drift = (Math.random() * 40 - 20);// px sideways
+      const delay = Math.random() * 0.6;
+
+      h.style.left = left + "vw";
+      h.style.fontSize = size + "px";
+      h.style.animationDuration = dur + "s";
+      h.style.animationDelay = delay + "s";
+      h.style.transform = `translate3d(${drift}px, 0, 0)`;
+
+      heartsEl.appendChild(h);
+      setTimeout(() => h.remove(), (dur + delay) * 1000);
+    }
+
+    setInterval(spawnHeart, 220);
+    for (let i = 0; i < 18; i++) setTimeout(spawnHeart, i * 120);
+
+    // ---------- NO button dodge + unclickable ----------
+    const noBtn = document.getElementById("noBtn");
+    const btnArea = document.getElementById("btnArea");
+
+    // Hard block clicking NO
+    const block = (e) => { e.preventDefault(); e.stopPropagation(); return false; };
+    ["click","pointerdown","mousedown","touchstart"].forEach(evt => {
+      noBtn.addEventListener(evt, block, { passive:false });
+    });
+
+    function moveNoButton(pointerX, pointerY) {
+      const area = btnArea.getBoundingClientRect();
+      const btn  = noBtn.getBoundingClientRect();
+
+      const padding = 6;
+      const maxX = area.width  - btn.width  - padding;
+      const maxY = area.height - btn.height - padding;
+
+      let x = Math.random() * maxX + padding;
+      let y = Math.random() * maxY + padding;
+
+      if (Number.isFinite(pointerX) && Number.isFinite(pointerY)) {
+        const px = pointerX - area.left;
+        const py = pointerY - area.top;
+
+        if (px < area.width / 2) x = (area.width / 2) + Math.random() * (area.width / 2 - btn.width - padding);
+        else x = Math.random() * (area.width / 2 - padding);
+
+        if (py < area.height / 2) y = (area.height / 2) + Math.random() * (area.height / 2 - btn.height - padding);
+        else y = Math.random() * (area.height / 2 - padding);
+
+        x = Math.min(Math.max(padding, x), maxX);
+        y = Math.min(Math.max(padding, y), maxY);
+      }
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top  = y + "px";
+    }
+
+    noBtn.addEventListener("mouseenter", (e) => moveNoButton(e.clientX, e.clientY));
+
+    btnArea.addEventListener("pointermove", (e) => {
+      const b = noBtn.getBoundingClientRect();
+      const dx = e.clientX - (b.left + b.width / 2);
+      const dy = e.clientY - (b.top  + b.height / 2);
+      if (Math.hypot(dx, dy) < 95) moveNoButton(e.clientX, e.clientY);
+    });
+
+    btnArea.addEventListener("touchstart", (e) => {
+      const t = e.touches[0];
+      if (!t) return;
+      const b = noBtn.getBoundingClientRect();
+      const dx = t.clientX - (b.left + b.width / 2);
+      const dy = t.clientY - (b.top  + b.height / 2);
+      if (Math.hypot(dx, dy) < 140) moveNoButton(t.clientX, t.clientY);
+    }, { passive:true });
+
+    requestAnimationFrame(() => moveNoButton());
+
+    // ---------- Lightbox (tap image to zoom) ----------
+    const boardImg = document.getElementById("boardImg");
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightboxImg");
+
+    boardImg.addEventListener("click", () => {
+      lightboxImg.src = boardImg.src;
+      lightbox.classList.add("on");
+      lightbox.setAttribute("aria-hidden", "false");
+    });
+    lightbox.addEventListener("click", () => {
+      lightbox.classList.remove("on");
+      lightbox.setAttribute("aria-hidden", "true");
+    });
+
+    // ---------- YES click celebration (sound + confetti + graffiti) ----------
+    const yesBtn = document.getElementById("yesBtn");
+    const celebrate = document.getElementById("celebrate");
+    const graffiti = document.getElementById("graffiti");
+
+    const TAGS = [
+      "LOVE", "VALENTINE", "💘", "XOXO", "KISS", "HUGS", "😍", "🔥",
+      "YAY", "FATEMEH", "فاتح💞", "❤️‍🔥", "💖", "💗"
+    ];
+
+    function randomColor() {
+      const hues = [300, 180, 60, 120, 210, 330, 25];
+      const h = hues[Math.floor(Math.random() * hues.length)];
+      return `hsl(${h} 95% 60%)`;
+    }
+
+    function sprayGraffiti(count = 36) {
+      graffiti.innerHTML = "";
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      for (let i = 0; i < count; i++) {
+        const tag = document.createElement("div");
+        tag.className = "tag";
+        tag.textContent = TAGS[Math.floor(Math.random() * TAGS.length)];
+
+        const x = Math.random() * (w - 40);
+        const y = Math.random() * (h - 40);
+        const size = 18 + Math.random() * 46;
+        const rot = (Math.random() * 40 - 20).toFixed(1) + "deg";
+
+        tag.style.left = x + "px";
+        tag.style.top = y + "px";
+        tag.style.fontSize = size + "px";
+        tag.style.color = randomColor();
+        tag.style.setProperty("--r", rot);
+
+        graffiti.appendChild(tag);
+      }
+    }
+
+    // --- WebAudio SFX (only after user interaction) ---
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function playPop() {
+      ensureAudio();
+      const t = audioCtx.currentTime;
+
+      // short "pop" (noise + quick pitch drop)
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(420, t);
+      o.frequency.exponentialRampToValueAtTime(160, t + 0.08);
+
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.10);
+
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + 0.12);
+    }
+
+    function playConfettiShhh() {
+      ensureAudio();
+      const t = audioCtx.currentTime;
+
+      // noise burst (filtered) for "shhh"
+      const bufferSize = audioCtx.sampleRate * 0.25;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.setValueAtTime(900, t);
+
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+
+      noise.connect(filter).connect(g).connect(audioCtx.destination);
+      noise.start(t);
+      noise.stop(t + 0.26);
+    }
+
+    // --- Confetti canvas animation ---
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    let confetti = [];
+    let animId = null;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth * devicePixelRatio;
+      canvas.height = window.innerHeight * devicePixelRatio;
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function launchConfetti() {
+      confetti = [];
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      const count = 180;
+      for (let i = 0; i < count; i++) {
+        confetti.push({
+          x: w / 2 + (Math.random() * 80 - 40),
+          y: h * 0.20 + (Math.random() * 40 - 20),
+          vx: (Math.random() * 8 - 4),
+          vy: (Math.random() * -10 - 6),
+          g: 0.28 + Math.random() * 0.12,
+          r: 2 + Math.random() * 4,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() * 0.25 - 0.125),
+          life: 140 + Math.random() * 80
+        });
+      }
+
+      if (animId) cancelAnimationFrame(animId);
+      tick();
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (const p of confetti) {
+        p.vy += p.g;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.life -= 1;
+
+        // draw tiny rectangles as confetti
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = randomColor();
+        ctx.fillRect(-p.r * 1.6, -p.r, p.r * 3.2, p.r * 2);
+        ctx.restore();
+      }
+
+      confetti = confetti.filter(p => p.life > 0 && p.y < window.innerHeight + 30);
+
+      if (confetti.length > 0) animId = requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
+
+    yesBtn.addEventListener("click", () => {
+      // user interaction -> sound allowed
+      playPop();
+      setTimeout(playConfettiShhh, 90);
+
+      celebrate.classList.add("on");
+      sprayGraffiti(42);
+      launchConfetti();
+
+      // extra heart burst
+      for (let i = 0; i < 28; i++) setTimeout(spawnHeart, i * 35);
+    });
+
+    // Tap celebration to re-spray graffiti
+    celebrate.addEventListener("click", () => sprayGraffiti(46));
+  </script>
+</body>
+</html>
